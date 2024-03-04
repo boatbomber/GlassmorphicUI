@@ -1,0 +1,14 @@
+[package]
+name = "boatbomber/glassmorphicui"
+description = "Glassmorphic UI in Roblox"
+version = "0.1.0"
+license = "MPL 2.0"
+authors = ["boatbomber (https://boatbomber.com)"]
+registry = "https://github.com/upliftgames/wally-index"
+realm = "shared"
+include = ["src", "src/**", "wally.toml", "wally.lock", "default.project.json"]
+exclude = ["**"]
+
+[dependencies]
+EditableImageBlur = "boatbomber/editableimageblur@0.1.0"
+PixelColorApproximation = "boatbomber/pixelcolorapproximation@0.1.1"

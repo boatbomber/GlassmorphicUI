@@ -1,0 +1,15 @@
+# Project build files
+/*.rbxl
+/*.rbxlx
+/*.rbxm
+/*.rbxmx
+
+# Wally managed packages
+Packages
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+# VS Code files
+.vscode/*

@@ -1,0 +1,15 @@
+{
+  "name": "@boatbomber/glassmorphicui",
+  "version": "0.1.0",
+  "license": "MPL 2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/boatbomber/GlassmorphicUI.git"
+  },
+  "contributors": [
+    "boatbomber"
+  ],
+  "bugs": {
+    "url": "https://github.com/boatbomber/GlassmorphicUI/issues"
+  }
+}
