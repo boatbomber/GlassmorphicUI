@@ -42,14 +42,16 @@ GlassmorphicUI.UPDATE_TIME_BUDGET = 0.002
 GlassmorphicUI.RADIUS = 5
 GlassmorphicUI.TEMPORAL_SMOOTHING = 0.75
 
-function GlassmorphicUI.new(): ImageLabel
-	local Window = Instance.new("ImageLabel")
-	-- Some reasonable defaults
-	Window.Size = UDim2.fromScale(50, 30)
-	Window.BackgroundColor3 = Color3.fromRGB(130, 215, 255)
-	Window.BorderSizePixel = 0
-	Window.BackgroundTransparency = 0.8
-	Window.Name = "GlassmorphicUI"
+function GlassmorphicUI.new(Window: ImageLabel | ImageButton?): ImageLabel
+	if not Window then
+		Window = Instance.new("ImageLabel")
+		-- Some reasonable defaults
+		Window.Size = UDim2.fromScale(50, 30)
+		Window.BackgroundColor3 = Color3.fromRGB(130, 215, 255)
+		Window.BorderSizePixel = 0
+		Window.BackgroundTransparency = 0.8
+		Window.Name = "GlassmorphicUI"
+	end
 
 	local EditableImage = Instance.new("EditableImage")
 	EditableImage.Parent = Window
