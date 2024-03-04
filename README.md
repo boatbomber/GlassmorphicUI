@@ -13,7 +13,7 @@ Via [wally](https://wally.run):
 GlassmorphicUI = "boatbomber/glassmorphicui@0.1.0"
 ```
 
-Alternatively, grab the `.rbxm` standalone model from the latest [release.](https://github.com/boatbomber/GlassmorphicUI/releases)
+Alternatively, grab the `.rbxm` standalone model from the latest [release.](https://github.com/boatbomber/GlassmorphicUI/releases/latest)
 
 ## Usage
 
