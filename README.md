@@ -1,6 +1,8 @@
 # GlassmorphicUI
 
-Glassmorphic UI in Roblox
+Glassmorphic UI in Roblox.
+
+[Please consider supporting my work.](https://github.com/sponsors/boatbomber)
 
 ![image](https://github.com/boatbomber/GlassmorphicUI/assets/40185666/8db526c2-40e3-4936-9a66-91fa030ba0f4)
 
