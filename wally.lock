@@ -9,10 +9,10 @@ dependencies = []
 
 [[package]]
 name = "boatbomber/glassmorphicui"
-version = "0.1.0"
-dependencies = [["EditableImageBlur", "boatbomber/editableimageblur@0.1.0"], ["PixelColorApproximation", "boatbomber/pixelcolorapproximation@0.1.1"]]
+version = "0.1.1"
+dependencies = [["EditableImageBlur", "boatbomber/editableimageblur@0.1.0"], ["PixelColorApproximation", "boatbomber/pixelcolorapproximation@0.1.2"]]
 
 [[package]]
 name = "boatbomber/pixelcolorapproximation"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = []
