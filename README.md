@@ -18,7 +18,7 @@ Alternatively, grab the `.rbxm` standalone model from the latest [release.](http
 ## Usage
 
 ```Lua
-function GlassmorphicUI.new():" ImageLabel
+function GlassmorphicUI.new(): ImageLabel
 ```
 
 Returns an ImageLabel with a glassmorphic effect.
