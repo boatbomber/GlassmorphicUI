@@ -1,17 +1,25 @@
+--!strict
+--!native
+--!optimize 2
+
 local RunService = game:GetService("RunService")
 
 local EditableImageBlur, PixelColorApproximation
-if script:FindFirstChild("Packages") then
-	-- Built as a stand-alone model
-	EditableImageBlur = require(script.Packages.EditableImageBlur)
-	PixelColorApproximation = require(script.Packages.PixelColorApproximation)
-elseif
-	script.Parent:FindFirstChild("EditableImageBlur") and script.Parent:FindFirstChild("PixelColorApproximation")
+local Packages = script:FindFirstChild("Packages") or script.Parent
+local EditableImageBlurModule = Packages:FindFirstChild("EditableImageBlur")
+local PixelColorApproximationModule = Packages:FindFirstChild("PixelColorApproximation")
+
+if
+	EditableImageBlurModule
+	and EditableImageBlurModule:IsA("ModuleScript")
+	and PixelColorApproximationModule
+	and PixelColorApproximationModule:IsA("ModuleScript")
 then
-	-- Installed via wally
-	EditableImageBlur = require(script.Parent.EditableImageBlur)
-	PixelColorApproximation = require(script.Parent.PixelColorApproximation)
-else
+	EditableImageBlur = require(EditableImageBlurModule)
+	PixelColorApproximation = require(PixelColorApproximationModule)
+end
+
+if not EditableImageBlur or not PixelColorApproximation then
 	error("Could not find required packages")
 end
 
@@ -38,7 +46,7 @@ GlassmorphicUI._glassObjects = {} :: { GlassObject }
 GlassmorphicUI._glassObjectUpdateIndex = 1
 
 GlassmorphicUI.MAX_AXIS_SAMPLING_RES = 39
-GlassmorphicUI.UPDATE_TIME_BUDGET = 0.002
+GlassmorphicUI.UPDATE_TIME_BUDGET = 0.0025
 GlassmorphicUI.RADIUS = 5
 GlassmorphicUI.TEMPORAL_SMOOTHING = 0.75
 
@@ -51,6 +59,36 @@ function GlassmorphicUI.new(): ImageLabel
 	Window.BackgroundTransparency = 0.8
 	Window.Name = "GlassmorphicUI"
 
+	return GlassmorphicUI._setupGlassWindow(Window)
+end
+
+function GlassmorphicUI.applyGlassToImageLabel(ImageLabel: ImageLabel)
+	if typeof(ImageLabel) == "Instance" and ImageLabel:IsA("ImageLabel") then
+		GlassmorphicUI._setupGlassWindow(ImageLabel)
+	end
+end
+
+function GlassmorphicUI.addGlassBackground(GuiObject: GuiObject): ImageLabel
+	if typeof(GuiObject) ~= "Instance" or not GuiObject:IsA("GuiObject") then
+		error("Expected GuiObject, got " .. typeof(GuiObject))
+	end
+
+	-- Ensure the glass isn't obstructed by the object
+	GuiObject.BackgroundTransparency = 1
+	GuiObject:GetPropertyChangedSignal("BackgroundTransparency"):Connect(function()
+		GuiObject.BackgroundTransparency = 1
+	end)
+
+	local glassBackground = GlassmorphicUI.new()
+	glassBackground.Size = UDim2.fromScale(1, 1)
+	glassBackground.Position = UDim2.fromScale(0, 0)
+	glassBackground.ZIndex = -999999
+	glassBackground.Parent = GuiObject
+
+	return glassBackground
+end
+
+function GlassmorphicUI._setupGlassWindow(Window: ImageLabel)
 	local EditableImage = Instance.new("EditableImage")
 	EditableImage.Parent = Window
 
@@ -74,7 +112,7 @@ function GlassmorphicUI.new(): ImageLabel
 		},
 	}
 
-	GlassmorphicUI:watchProperties(glassObject)
+	GlassmorphicUI._watchProperties(glassObject)
 
 	Window.Destroying:Connect(function()
 		local index = table.find(GlassmorphicUI._glassObjects, glassObject)
@@ -83,54 +121,61 @@ function GlassmorphicUI.new(): ImageLabel
 		end
 	end)
 
-	local initializeConnection
-	initializeConnection = Window.AncestryChanged:Connect(function()
-		if not Window:IsDescendantOf(game) then
-			return
-		end
+	if not Window:IsDescendantOf(game) then
+		local initializeConnection
+		initializeConnection = Window.AncestryChanged:Connect(function()
+			if not Window:IsDescendantOf(game) then
+				return
+			end
 
-		initializeConnection:Disconnect()
+			initializeConnection:Disconnect()
 
-		-- Wait for window properties to load
-		while Window.AbsoluteSize.X == 0 do
-			task.wait()
-		end
+			-- Wait for window properties to load
+			while Window.AbsoluteSize.X == 0 or Window.AbsoluteSize.Y == 0 do
+				task.wait()
+			end
 
-		GlassmorphicUI:updateWindowColor(glassObject)
-		GlassmorphicUI:updateWindowPosition(glassObject)
-		GlassmorphicUI:updateWindowSize(glassObject)
+			GlassmorphicUI._updateWindowColor(glassObject)
+			GlassmorphicUI._updateWindowPosition(glassObject)
+			GlassmorphicUI._updateWindowSize(glassObject)
 
+			table.insert(GlassmorphicUI._glassObjects, glassObject)
+		end)
+	else
+		GlassmorphicUI._updateWindowColor(glassObject)
+		GlassmorphicUI._updateWindowPosition(glassObject)
+		GlassmorphicUI._updateWindowSize(glassObject)
 		table.insert(GlassmorphicUI._glassObjects, glassObject)
-	end)
+	end
 
 	return Window
 end
 
-function GlassmorphicUI:watchProperties(glassObject: GlassObject)
+function GlassmorphicUI._watchProperties(glassObject: GlassObject)
 	local Window = glassObject.Window
 
 	Window:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
-		GlassmorphicUI:updateWindowPosition(glassObject)
+		GlassmorphicUI._updateWindowPosition(glassObject)
 	end)
 	Window:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-		GlassmorphicUI:updateWindowSize(glassObject)
+		GlassmorphicUI._updateWindowSize(glassObject)
 	end)
 	Window:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
-		GlassmorphicUI:updateWindowColor(glassObject)
+		GlassmorphicUI._updateWindowColor(glassObject)
 	end)
 	Window:GetPropertyChangedSignal("BackgroundTransparency"):Connect(function()
-		GlassmorphicUI:updateWindowColor(glassObject)
+		GlassmorphicUI._updateWindowColor(glassObject)
 	end)
 end
 
-function GlassmorphicUI:updateWindowPosition(glassObject: GlassObject)
+function GlassmorphicUI._updateWindowPosition(glassObject: GlassObject)
 	local Window = glassObject.Window
 	local absolutePosition = Window.AbsolutePosition
 	glassObject.WindowPositionX = absolutePosition.X
 	glassObject.WindowPositionY = absolutePosition.Y
 end
 
-function GlassmorphicUI:updateWindowColor(glassObject: GlassObject)
+function GlassmorphicUI._updateWindowColor(glassObject: GlassObject)
 	local Window = glassObject.Window
 	local windowAlpha = 1 - Window.BackgroundTransparency
 	local windowColor = Window.BackgroundColor3
@@ -140,7 +185,7 @@ function GlassmorphicUI:updateWindowColor(glassObject: GlassObject)
 	glassObject.WindowColor[4] = windowAlpha
 end
 
-function GlassmorphicUI:updateWindowSize(glassObject: GlassObject)
+function GlassmorphicUI._updateWindowSize(glassObject: GlassObject)
 	local Window = glassObject.Window
 
 	local absoluteSize = Window.AbsoluteSize
@@ -154,7 +199,7 @@ function GlassmorphicUI:updateWindowSize(glassObject: GlassObject)
 	glassObject.WindowSizeY = windowSizeY
 
 	local maxAxis = math.max(windowSizeX, windowSizeY)
-	local samplerSize = maxAxis / math.min(self.MAX_AXIS_SAMPLING_RES, maxAxis)
+	local samplerSize = maxAxis / math.min(GlassmorphicUI.MAX_AXIS_SAMPLING_RES, maxAxis)
 
 	local resolutionX, resolutionY = windowSizeX // samplerSize, windowSizeY // samplerSize
 	local inverseResX, inverseResY = 1 / resolutionX, 1 / resolutionY
@@ -191,7 +236,7 @@ function GlassmorphicUI:updateWindowSize(glassObject: GlassObject)
 	end
 end
 
-function GlassmorphicUI:processNextPixel(glassObject: GlassObject)
+function GlassmorphicUI._processNextPixel(glassObject: GlassObject)
 	local Window = glassObject.Window
 	if (not Window) or (not Window:IsDescendantOf(game)) then
 		return
@@ -241,9 +286,9 @@ function GlassmorphicUI:processNextPixel(glassObject: GlassObject)
 	color[3] = (1 - windowAlpha) * color[3] + windowAlpha * WindowColor[3]
 
 	local prevR, prevG, prevB = Pixels[PixelIndex], Pixels[PixelIndex + 1], Pixels[PixelIndex + 2]
-	Pixels[PixelIndex] = prevR + (color[1] - prevR) * self.TEMPORAL_SMOOTHING
-	Pixels[PixelIndex + 1] = prevG + (color[2] - prevG) * self.TEMPORAL_SMOOTHING
-	Pixels[PixelIndex + 2] = prevB + (color[3] - prevB) * self.TEMPORAL_SMOOTHING
+	Pixels[PixelIndex] = prevR + (color[1] - prevR) * GlassmorphicUI.TEMPORAL_SMOOTHING
+	Pixels[PixelIndex + 1] = prevG + (color[2] - prevG) * GlassmorphicUI.TEMPORAL_SMOOTHING
+	Pixels[PixelIndex + 2] = prevB + (color[3] - prevB) * GlassmorphicUI.TEMPORAL_SMOOTHING
 	--Pixels[pixelIndex + 3] = color[4]
 
 	PixelIndex += 8
@@ -255,33 +300,36 @@ function GlassmorphicUI:processNextPixel(glassObject: GlassObject)
 	glassObject.PixelIndex = PixelIndex
 end
 
-function GlassmorphicUI:update()
-	local totalGlassObjects = #self._glassObjects
+function GlassmorphicUI._update()
+	local totalGlassObjects = #GlassmorphicUI._glassObjects
 	if totalGlassObjects == 0 then
 		return
 	end
 
+	local estimatedBlurTime = (totalGlassObjects * 27e-5)
+	local allottedPixelProcessingTime = GlassmorphicUI.UPDATE_TIME_BUDGET - estimatedBlurTime
+
 	local startClock = os.clock()
 
 	-- Process pixels until time is up
-	while os.clock() - startClock < self.UPDATE_TIME_BUDGET do
-		local glassObject = self._glassObjects[self._glassObjectUpdateIndex]
+	while os.clock() - startClock < allottedPixelProcessingTime do
+		local glassObject = GlassmorphicUI._glassObjects[GlassmorphicUI._glassObjectUpdateIndex]
 		if glassObject then
-			self:processNextPixel(glassObject)
+			GlassmorphicUI._processNextPixel(glassObject)
 		end
-		self._glassObjectUpdateIndex += 1
+		GlassmorphicUI._glassObjectUpdateIndex += 1
 
-		if self._glassObjectUpdateIndex > totalGlassObjects then
-			self._glassObjectUpdateIndex = 1
+		if GlassmorphicUI._glassObjectUpdateIndex > totalGlassObjects then
+			GlassmorphicUI._glassObjectUpdateIndex = 1
 		end
 	end
 
 	-- Apply the pixels to the images with blur
-	for _, glassObject in self._glassObjects do
+	for _, glassObject in GlassmorphicUI._glassObjects do
 		EditableImageBlur({
 			image = glassObject.EditableImage,
 			pixelData = glassObject.Pixels,
-			blurRadius = self.RADIUS,
+			blurRadius = GlassmorphicUI.RADIUS,
 			downscaleFactor = 1,
 			skipAlpha = true,
 		})
@@ -289,7 +337,11 @@ function GlassmorphicUI:update()
 end
 
 RunService.Heartbeat:Connect(function()
-	GlassmorphicUI:update()
+	GlassmorphicUI._update()
 end)
 
-return GlassmorphicUI
+return table.freeze({
+	new = GlassmorphicUI.new,
+	applyGlassToImageLabel = GlassmorphicUI.applyGlassToImageLabel,
+	addGlassBackground = GlassmorphicUI.addGlassBackground,
+})

@@ -12,7 +12,7 @@ Via [wally](https://wally.run):
 
 ```toml
 [dependencies]
-GlassmorphicUI = "boatbomber/glassmorphicui@0.1.1"
+GlassmorphicUI = "boatbomber/glassmorphicui@0.2.0"
 ```
 
 Alternatively, grab the `.rbxm` standalone model from the latest [release.](https://github.com/boatbomber/GlassmorphicUI/releases/latest)
@@ -30,11 +30,54 @@ Compatible with UICorners and all other ImageLabel properties.
 ```lua
 local GlassmorphicUI = require(Path.To.GlassmorphicUI)
 
-local blurryWindow = GlassmorphicUI.new()
-blurryWindow.BackgroundTransparency = 0.5
-blurryWindow.BackgroundColor3 = Color3.fromRGB(7, 48, 84)
-blurryWindow.Size = UDim2.fromScale(0.3, 0.3)
-blurryWindow.Position = UDim2.fromScale(0.5, 0.5)
-blurryWindow.AnchorPoint = Vector2.new(0.5, 0.5)
-blurryWindow.Parent = ScreenGui
+local glassyimage = GlassmorphicUI.new()
+glassyimage.BackgroundTransparency = 0.5
+glassyimage.BackgroundColor3 = Color3.fromRGB(7, 48, 84)
+glassyimage.Size = UDim2.fromScale(0.3, 0.3)
+glassyimage.Position = UDim2.fromScale(0.5, 0.5)
+glassyimage.AnchorPoint = Vector2.new(0.5, 0.5)
+glassyimage.Parent = ScreenGui
+```
+
+```Lua
+function GlassmorphicUI.applyGlassToImageLabel(ImageLabel: ImageLabel): ()
+```
+
+Takes an existing ImageLabel and applies the glassmorphic effect to it.
+Useful for integrating GlassmorphicUI with existing UI systems.
+
+```lua
+local GlassmorphicUI = require(Path.To.GlassmorphicUI)
+
+local glassyimage = Instance.new("ImageLabel")
+glassyimage.BackgroundTransparency = 0.5
+glassyimage.BackgroundColor3 = Color3.fromRGB(7, 48, 84)
+glassyimage.Size = UDim2.fromScale(0.3, 0.3)
+glassyimage.Position = UDim2.fromScale(0.5, 0.5)
+glassyimage.AnchorPoint = Vector2.new(0.5, 0.5)
+glassyimage.Parent = ScreenGui
+
+GlassmorphicUI.applyGlassToImageLabel(glassyimage)
+```
+
+
+```Lua
+function GlassmorphicUI.addGlassBackground(GuiObject: GuiObject): ImageLabel
+```
+
+Takes an existing GuiObject (such as a Frame) and parents a glassy ImageLabel inside it.
+The ImageLabel will have a very low ZIndex as to appear as the background of the GuiObject.
+The GuiObject will be forced to have a BackgroundTransparency of 1, otherwise the effect would just show your GuiObject's background behind the glass.
+Useful for integrating GlassmorphicUI with existing UI systems.
+
+```lua
+local GlassmorphicUI = require(Path.To.GlassmorphicUI)
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromScale(0.2, 0.2)
+frame.Parent = script.Parent
+
+local glassyimage = GlassmorphicUI.addGlassBackground(frame)
+glassyimage.BackgroundTransparency = 0.5
+glassyimage.BackgroundColor3 = Color3.fromRGB(7, 48, 84)
 ```
