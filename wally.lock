@@ -4,13 +4,13 @@ registry = "test"
 
 [[package]]
 name = "boatbomber/editableimageblur"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = []
 
 [[package]]
 name = "boatbomber/glassmorphicui"
-version = "0.1.1"
-dependencies = [["EditableImageBlur", "boatbomber/editableimageblur@0.1.0"], ["PixelColorApproximation", "boatbomber/pixelcolorapproximation@0.1.2"]]
+version = "0.2.0"
+dependencies = [["EditableImageBlur", "boatbomber/editableimageblur@0.3.0"], ["PixelColorApproximation", "boatbomber/pixelcolorapproximation@0.1.2"]]
 
 [[package]]
 name = "boatbomber/pixelcolorapproximation"

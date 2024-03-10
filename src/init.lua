@@ -3,6 +3,7 @@
 --!optimize 2
 
 local RunService = game:GetService("RunService")
+local CollectionService = game:GetService("CollectionService")
 
 local EditableImageBlur, PixelColorApproximation
 local Packages = script:FindFirstChild("Packages") or script.Parent
@@ -38,17 +39,21 @@ type GlassObject = {
 	WindowPositionX: number,
 	WindowPositionY: number,
 	WindowColor: { number },
+	BlurRadius: number,
 }
 
 local GlassmorphicUI = {}
 
 GlassmorphicUI._glassObjects = {} :: { GlassObject }
 GlassmorphicUI._glassObjectUpdateIndex = 1
+GlassmorphicUI._windowToObject = setmetatable({} :: { [ImageLabel]: GlassObject }, { __mode = "k" })
 
 GlassmorphicUI.MAX_AXIS_SAMPLING_RES = 39
-GlassmorphicUI.UPDATE_TIME_BUDGET = 0.0025
+GlassmorphicUI.UPDATE_TIME_BUDGET = 3e-3
 GlassmorphicUI.RADIUS = 5
 GlassmorphicUI.TEMPORAL_SMOOTHING = 0.75
+GlassmorphicUI.TAG_NAME = "GlassmorphicUI"
+GlassmorphicUI.BLUR_RADIUS_ATTRIBUTE_NAME = "BlurRadius"
 
 function GlassmorphicUI.new(): ImageLabel
 	local Window = Instance.new("ImageLabel")
@@ -58,13 +63,21 @@ function GlassmorphicUI.new(): ImageLabel
 	Window.BorderSizePixel = 0
 	Window.BackgroundTransparency = 0.8
 	Window.Name = "GlassmorphicUI"
+	Window:AddTag(GlassmorphicUI.TAG_NAME)
 
-	return GlassmorphicUI._setupGlassWindow(Window)
+	return Window
+end
+
+function GlassmorphicUI.setDefaultBlurRadius(radius: number)
+	if type(radius) ~= "number" then
+		return
+	end
+	GlassmorphicUI.RADIUS = math.clamp(math.round(radius), 1, GlassmorphicUI.MAX_AXIS_SAMPLING_RES / 2)
 end
 
 function GlassmorphicUI.applyGlassToImageLabel(ImageLabel: ImageLabel)
 	if typeof(ImageLabel) == "Instance" and ImageLabel:IsA("ImageLabel") then
-		GlassmorphicUI._setupGlassWindow(ImageLabel)
+		ImageLabel:AddTag(GlassmorphicUI.TAG_NAME)
 	end
 end
 
@@ -89,6 +102,11 @@ function GlassmorphicUI.addGlassBackground(GuiObject: GuiObject): ImageLabel
 end
 
 function GlassmorphicUI._setupGlassWindow(Window: ImageLabel)
+	if GlassmorphicUI._windowToObject[Window] then
+		-- This window is already set up
+		return Window
+	end
+
 	local EditableImage = Instance.new("EditableImage")
 	EditableImage.Parent = Window
 
@@ -110,7 +128,12 @@ function GlassmorphicUI._setupGlassWindow(Window: ImageLabel)
 			Window.BackgroundColor3.B,
 			1 - Window.BackgroundTransparency,
 		},
+		BlurRadius = GlassmorphicUI.RADIUS,
 	}
+
+	GlassmorphicUI._windowToObject[Window] = glassObject
+
+	Window:SetAttribute(GlassmorphicUI.BLUR_RADIUS_ATTRIBUTE_NAME, glassObject.BlurRadius)
 
 	GlassmorphicUI._watchProperties(glassObject)
 
@@ -138,6 +161,7 @@ function GlassmorphicUI._setupGlassWindow(Window: ImageLabel)
 			GlassmorphicUI._updateWindowColor(glassObject)
 			GlassmorphicUI._updateWindowPosition(glassObject)
 			GlassmorphicUI._updateWindowSize(glassObject)
+			GlassmorphicUI._updateWindowBlurRadius(glassObject)
 
 			table.insert(GlassmorphicUI._glassObjects, glassObject)
 		end)
@@ -145,6 +169,7 @@ function GlassmorphicUI._setupGlassWindow(Window: ImageLabel)
 		GlassmorphicUI._updateWindowColor(glassObject)
 		GlassmorphicUI._updateWindowPosition(glassObject)
 		GlassmorphicUI._updateWindowSize(glassObject)
+		GlassmorphicUI._updateWindowBlurRadius(glassObject)
 		table.insert(GlassmorphicUI._glassObjects, glassObject)
 	end
 
@@ -166,6 +191,19 @@ function GlassmorphicUI._watchProperties(glassObject: GlassObject)
 	Window:GetPropertyChangedSignal("BackgroundTransparency"):Connect(function()
 		GlassmorphicUI._updateWindowColor(glassObject)
 	end)
+	Window:GetAttributeChangedSignal(GlassmorphicUI.BLUR_RADIUS_ATTRIBUTE_NAME):Connect(function(radius)
+		GlassmorphicUI._updateWindowBlurRadius(glassObject, radius)
+	end)
+end
+
+function GlassmorphicUI._updateWindowBlurRadius(glassObject: GlassObject, radius: number?)
+	if not radius then
+		radius = glassObject.Window:GetAttribute(GlassmorphicUI.BLUR_RADIUS_ATTRIBUTE_NAME)
+	end
+	if type(radius) ~= "number" then
+		return
+	end
+	glassObject.BlurRadius = math.clamp(math.round(radius), 1, GlassmorphicUI.MAX_AXIS_SAMPLING_RES / 2)
 end
 
 function GlassmorphicUI._updateWindowPosition(glassObject: GlassObject)
@@ -306,16 +344,18 @@ function GlassmorphicUI._update()
 		return
 	end
 
-	local estimatedBlurTime = (totalGlassObjects * 27e-5)
+	local estimatedBlurTime = (totalGlassObjects * 3e-4)
 	local allottedPixelProcessingTime = GlassmorphicUI.UPDATE_TIME_BUDGET - estimatedBlurTime
 
 	local startClock = os.clock()
 
 	-- Process pixels until time is up
+	local updatedGlassObjects = {}
 	while os.clock() - startClock < allottedPixelProcessingTime do
 		local glassObject = GlassmorphicUI._glassObjects[GlassmorphicUI._glassObjectUpdateIndex]
 		if glassObject then
 			GlassmorphicUI._processNextPixel(glassObject)
+			updatedGlassObjects[GlassmorphicUI._glassObjectUpdateIndex] = glassObject
 		end
 		GlassmorphicUI._glassObjectUpdateIndex += 1
 
@@ -324,12 +364,12 @@ function GlassmorphicUI._update()
 		end
 	end
 
-	-- Apply the pixels to the images with blur
-	for _, glassObject in GlassmorphicUI._glassObjects do
+	-- Blur and apply the pixels for the updated objects
+	for _, glassObject in updatedGlassObjects do
 		EditableImageBlur({
 			image = glassObject.EditableImage,
 			pixelData = glassObject.Pixels,
-			blurRadius = GlassmorphicUI.RADIUS,
+			blurRadius = glassObject.BlurRadius,
 			downscaleFactor = 1,
 			skipAlpha = true,
 		})
@@ -340,8 +380,17 @@ RunService.Heartbeat:Connect(function()
 	GlassmorphicUI._update()
 end)
 
+CollectionService:GetInstanceAddedSignal(GlassmorphicUI.TAG_NAME):Connect(function(Instance)
+	if Instance:IsA("ImageLabel") then
+		GlassmorphicUI._setupGlassWindow(Instance)
+	elseif Instance:IsA("GuiObject") then
+		GlassmorphicUI.addGlassBackground(Instance)
+	end
+end)
+
 return table.freeze({
 	new = GlassmorphicUI.new,
 	applyGlassToImageLabel = GlassmorphicUI.applyGlassToImageLabel,
 	addGlassBackground = GlassmorphicUI.addGlassBackground,
+	setDefaultBlurRadius = GlassmorphicUI.setDefaultBlurRadius,
 })

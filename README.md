@@ -12,25 +12,43 @@ Via [wally](https://wally.run):
 
 ```toml
 [dependencies]
-GlassmorphicUI = "boatbomber/glassmorphicui@0.2.0"
+GlassmorphicUI = "boatbomber/glassmorphicui@0.3.0"
 ```
 
 Alternatively, grab the `.rbxm` standalone model from the latest [release.](https://github.com/boatbomber/GlassmorphicUI/releases/latest)
 
 ## Usage
 
+**Setting up glassy effects:**
+
+You can add a `GlassmorphicUI` tag to a Frame or other GuiObject to automatically add a glassmorphic background to it.
+Adding a `GlassmorphicUI` tag to an ImageLabel will apply the glass effects to it directly, instead of adding a background image.
+
+Of course, you'll need to `require` the module in order for it to run even if you only use tags and don't intend to call any of its functions directly.
+
+If you prefer to use the API directly instead of CollectionService tags, you can use the `GlassmorphicUI.new()` function to create a new glassy ImageLabel, `GlassmorphicUI.applyGlassToImageLabel()` to apply the glassmorphic effect to an existing ImageLabel, or `GlassmorphicUI.addGlassBackground()` to add a glassy background to an existing GuiObject. See the API section below for more details on those functions.
+
+**Modifying the visuals:**
+
+You can modify the glassmorphic effect by changing the `BackgroundTransparency` and `BackgroundColor3` properties of the ImageLabel. You can also use a `BlurRadius` attribute to modify the blur radius of the glassmorphic effect. It is compatible with UICorners and all other ImageLabel properties.
+
+A higher `BackgroundTransparency` will make the glassmorphic effect more prominent as the blurry elements underneath become more visible. The `BackgroundColor3` will affect the tint of the glass. A lower `BlurRadius` will let you see more detail behind the glass. Be aware that a lower `BlurRadius` will make the imperfections of the approximated effect more obvious and ugly.
+
+You can also use `GlassmorphicUI.setDefaultBlurRadius()` to set the default blur radius for all glassmorphic images. This will not affect images that have already been created.
+
+## API
+
 ```Lua
 function GlassmorphicUI.new(): ImageLabel
 ```
 
 Returns an ImageLabel with a glassmorphic effect.
-Use BackgroundTransparency and BackgroundColor3 to modify the glassmorphic effect.
-Compatible with UICorners and all other ImageLabel properties.
 
 ```lua
 local GlassmorphicUI = require(Path.To.GlassmorphicUI)
 
 local glassyimage = GlassmorphicUI.new()
+glassyimage:SetAttribute("BlurRadius", 5)
 glassyimage.BackgroundTransparency = 0.5
 glassyimage.BackgroundColor3 = Color3.fromRGB(7, 48, 84)
 glassyimage.Size = UDim2.fromScale(0.3, 0.3)
@@ -81,3 +99,10 @@ local glassyimage = GlassmorphicUI.addGlassBackground(frame)
 glassyimage.BackgroundTransparency = 0.5
 glassyimage.BackgroundColor3 = Color3.fromRGB(7, 48, 84)
 ```
+
+```lua
+function GlassmorphicUI.setDefaultBlurRadius(BlurRadius: number): ()
+```
+
+Sets the default blur radius for all glassmorphic images. Does not affect
+images that have already been created.
