@@ -133,8 +133,6 @@ function GlassmorphicUI._setupGlassWindow(Window: ImageLabel)
 
 	GlassmorphicUI._windowToObject[Window] = glassObject
 
-	Window:SetAttribute(GlassmorphicUI.BLUR_RADIUS_ATTRIBUTE_NAME, glassObject.BlurRadius)
-
 	GlassmorphicUI._watchProperties(glassObject)
 
 	Window.Destroying:Connect(function()
