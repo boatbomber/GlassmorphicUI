@@ -12,7 +12,7 @@ Via [wally](https://wally.run):
 
 ```toml
 [dependencies]
-GlassmorphicUI = "boatbomber/glassmorphicui@0.3.1"
+GlassmorphicUI = "boatbomber/glassmorphicui@0.3.2"
 ```
 
 Alternatively, grab the `.rbxm` standalone model from the latest [release.](https://github.com/boatbomber/GlassmorphicUI/releases/latest)

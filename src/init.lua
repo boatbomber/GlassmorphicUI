@@ -378,13 +378,18 @@ RunService.Heartbeat:Connect(function()
 	GlassmorphicUI._update()
 end)
 
-CollectionService:GetInstanceAddedSignal(GlassmorphicUI.TAG_NAME):Connect(function(Instance)
+local function processInstance(Instance: Instance)
 	if Instance:IsA("ImageLabel") then
 		GlassmorphicUI._setupGlassWindow(Instance)
 	elseif Instance:IsA("GuiObject") then
 		GlassmorphicUI.addGlassBackground(Instance)
 	end
-end)
+end
+
+CollectionService:GetInstanceAddedSignal(GlassmorphicUI.TAG_NAME):Connect(processInstance)
+for _, Instance in CollectionService:GetTagged(GlassmorphicUI.TAG_NAME) do
+	processInstance(Instance)
+end
 
 return table.freeze({
 	new = GlassmorphicUI.new,
