@@ -1,0 +1,22 @@
+{
+  "name": "GlassmorphicUIDemo",
+  "tree": {
+    "$className": "DataModel",
+
+    "StarterGui": {
+      "$className": "StarterGui",
+
+      "Demo": {
+        "$path": "demo",
+
+        "GlassmorphicUI": {
+          "$path": "src",
+
+          "Packages": {
+            "$path": "Packages"
+          }
+        }
+      }
+    }
+  }
+}

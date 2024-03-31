@@ -12,7 +12,7 @@ Via [wally](https://wally.run):
 
 ```toml
 [dependencies]
-GlassmorphicUI = "boatbomber/glassmorphicui@0.3.2"
+GlassmorphicUI = "boatbomber/glassmorphicui@0.4.0"
 ```
 
 Alternatively, grab the `.rbxm` standalone model from the latest [release.](https://github.com/boatbomber/GlassmorphicUI/releases/latest)
@@ -78,7 +78,6 @@ glassyimage.Parent = ScreenGui
 GlassmorphicUI.applyGlassToImageLabel(glassyimage)
 ```
 
-
 ```Lua
 function GlassmorphicUI.addGlassBackground(GuiObject: GuiObject): ImageLabel
 ```
@@ -99,6 +98,33 @@ local glassyimage = GlassmorphicUI.addGlassBackground(frame)
 glassyimage.BackgroundTransparency = 0.5
 glassyimage.BackgroundColor3 = Color3.fromRGB(7, 48, 84)
 ```
+
+```lua
+function GlassmorphicUI.forceUpdate(ImageLabel: ImageLabel): ImageLabel
+```
+
+Forces a refresh of the glassmorphic effect on an ImageLabel. **Use sparingly, as this is an expensive operation.**
+Intended to be used when you need an immediate and total update due to major background changes, such as closing a menu underneath the glass or teleporting the player to a new location.
+
+```lua
+function GlassmorphicUI.pauseUpdates(Window: ImageLabel): ImageLabel
+```
+
+Pauses updates to the glassmorphic effect on an ImageLabel. Useful for reducing lag when you have a lot of glassmorphic images that don't need to update every frame.
+
+For example, if you have a glassmorphic effect on top of a background that never changes, you can just never update.
+
+```lua
+local glassyimage = GlassmorphicUI.pauseUpdates(GlassmorphicUI.new())
+```
+
+The initial update always happens, even if paused, so the glass won't be blank when created.
+
+```lua
+function GlassmorphicUI.resumeUpdates(Window: ImageLabel): ImageLabel
+```
+
+Resumes updates to the glassmorphic effect on an ImageLabel that has been paused by `GlassmorphicUI.pauseUpdates`.
 
 ```lua
 function GlassmorphicUI.setDefaultBlurRadius(BlurRadius: number): ()
