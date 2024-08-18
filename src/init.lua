@@ -356,7 +356,7 @@ end
 
 function GlassmorphicUI._processNextPixel(glassObject: GlassObject, skipTween: boolean?)
 	local Window = glassObject.Window
-	if (not Window) or (not Window:IsDescendantOf(game)) then
+	if (not Window) or not Window.Parent then
 		return
 	end
 
